@@ -1,0 +1,26 @@
+{
+  "name": "react-web-session",
+  "version": "0.1.0",
+  "description": "Keep session data between windows",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gilbarbara/react-web-session.git"
+  },
+  "keywords": [
+    "react",
+    "react-component",
+    "component",
+    "GA"
+  ],
+  "author": "Gil Barbara <gilbarbara@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gilbarbara/react-web-session/issues"
+  },
+  "main": "./lib/index.js",
+  "peerDependencies": {
+    "react": "^15.0.0 || ^16.0.0",
+    "react-dom": "^15.0.0 || ^16.0.0",
+    "prop-types": "^15.0.0"
+  },
+}
