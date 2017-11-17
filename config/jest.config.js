@@ -16,6 +16,7 @@ module.exports = {
   setupFiles: [
     '<rootDir>/test/__setup__/shim.js',
     '<rootDir>/test/__setup__/index.js',
+    'jest-localstorage-mock',
   ],
   testRegex: '/test/.*?\\.(test|spec)\\.js$',
   collectCoverage: false,
@@ -24,10 +25,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 65,
-      functions: 65,
-      lines: 65,
-      statements: 65
+      branches: 40,
+      functions: 60,
+      lines: 60,
+      statements: 60
     },
   },
   verbose: true,
