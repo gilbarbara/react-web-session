@@ -1,114 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import createHistory from 'history/createBrowserHistory';
+import WebSession from './WebSession';
 
-function isLocalStorageSupported() {
-  const testKey = 'test';
-  const storage = window.localStorage;
-
-  try {
-    storage.setItem(testKey, '1');
-    storage.removeItem(testKey);
-    return true;
-  }
-  catch (error) {
-    return false;
-  }
-}
-
-const canUseLocalStorage = isLocalStorageSupported();
-
-class WebSession {
-  get count() {
-    if (canUseLocalStorage) {
-      return Number(window.localStorage.getItem('WebSessionCount'));
-    }
-
-    return NaN;
-  }
-
-  set count(val) {
-    window.localStorage.setItem('WebSessionCount', val);
-  }
-
-  get data() {
-    const data = window.localStorage.getItem('WebSessionData');
-
-    if (data) {
-      return JSON.parse(data);
-    }
-
-    return {
-      updatedAt: new Date().toUTCString(),
-    };
-  }
-
-  set data(data) {
-    if (canUseLocalStorage) {
-      const nextData = JSON.stringify({
-        ...data,
-        updatedAt: new Date().toUTCString(),
-      });
-
-      window.localStorage.setItem('WebSessionData', nextData);
-
-      if (this.isNewSession()) {
-        this.count = this.count + 1;
-      }
-    }
-  }
-
-  get lastActive() {
-    const { updatedAt } = this.data;
-
-    if (updatedAt) {
-      return new Date(updatedAt);
-    }
-
-    return new Date();
-  }
-
-  update() {
-    if (canUseLocalStorage) {
-      this.data = { ...this.data };
-
-      if (this.isNewSession()) {
-        this.count = this.count + 1;
-      }
-    }
-
-    console.log('isNewSession', this.isNewSession());
-  }
-
-  isNewSession() {
-    const time = this.lastActive;
-    const now = new Date();
-
-    return [
-      (now - time) / 1000 / 60 > 30,
-      now.toDateString() !== time.toDateString(),
-    ].some(d => d);
-  }
-}
-
-export const updateSession = new WebSession();
+export const webSession = new WebSession();
 
 export default class ReactWebSession extends React.Component {
   constructor(props) {
     super(props);
 
     this.removeListener = () => {};
-    this.session = new WebSession();
-
-    console.log(this.session.data);
-    this.state = {
+    this.defaultData = {
       origin: {
         hash: '',
         pathname: '',
         search: '',
       },
       utm: {},
-      ...this.session.data,
+      ...webSession.data,
     };
   }
 
@@ -130,14 +39,6 @@ export default class ReactWebSession extends React.Component {
     });
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    console.log('componentDidUpdate', this.state);
-    if (JSON.stringify(this.state) !== JSON.stringify(prevState)) {
-      console.log('componentDidUpdate', true);
-      this.session.data = this.state;
-    }
-  }
-
   componentWillUnmount() {
     this.removeListener();
   }
@@ -145,8 +46,8 @@ export default class ReactWebSession extends React.Component {
   setChanges = (location, initial = false) => {
     const { data } = this.props;
     const { hash, pathname, search } = location;
-    let utm = { ...this.state.utm };
-    let origin = { ...this.state.origin };
+    let utm = { ...this.defaultData.utm };
+    let origin = { ...this.defaultData.origin };
 
     if (initial) {
       origin = {
@@ -158,17 +59,18 @@ export default class ReactWebSession extends React.Component {
       utm = this.getUTMs(search);
     }
 
-    this.setState({
+    webSession.data = {
       origin,
       utm,
       ...data,
-    });
+    };
   };
 
   getUTMs = search => {
-    const { utm } = this.state;
-    console.log('getUTMs', !search, !this.session.isNewSession());
-    if (!search && !this.session.isNewSession()) {
+    const { utm } = webSession.data;
+    console.log('getUTMs', !!search, webSession.isNewSession());
+
+    if (!search && !webSession.isNewSession()) {
       console.log('getUTMs', 'storage');
       return utm;
     }
@@ -190,7 +92,7 @@ export default class ReactWebSession extends React.Component {
 
     if (JSON.stringify(utm) !== JSON.stringify(currentUTMs)) {
       console.log('addCount');
-      this.session.count = this.session.count + 1;
+      webSession.count += 1;
     }
 
     return currentUTMs;
