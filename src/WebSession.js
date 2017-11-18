@@ -1,86 +1,134 @@
-function isLocalStorageSupported() {
-  const testKey = 'test';
-  const storage = window.localStorage;
-
-  try {
-    storage.setItem(testKey, '1');
-    storage.removeItem(testKey);
-    return true;
-  }
-  catch (error) {
-    return false;
-  }
-}
-
-const canUseLocalStorage = isLocalStorageSupported();
+import {
+  hasLocalStorage,
+  parseQuery,
+  shallowCompare,
+  store,
+} from './utils';
 
 export default class WebSession {
-  get count() {
-    if (canUseLocalStorage) {
-      return Number(window.localStorage.getItem('WebSessionCount'));
+  constructor(callback) {
+    if (!hasLocalStorage()) {
+      console.error('localStorage is not supported'); //eslint-disable-line no-console
     }
 
-    return NaN;
+    this.init(callback);
   }
 
-  set count(val) {
-    window.localStorage.setItem('WebSessionCount', val);
-  }
-
-  get data() {
-    const data = window.localStorage.getItem('WebSessionData');
-
-    if (data) {
-      return JSON.parse(data);
-    }
-
-    return {
+  init(callback = () => {}) {
+    this.sessionData = store.get('WebSessionData') || {
+      origin: this.getOrigin(),
+      utm: this.getUTMs(),
       updatedAt: new Date().toUTCString(),
     };
-  }
+    this.sessionCount = Number(store.get('WebSessionCount')) || 0;
 
-  set data(data) {
-    if (canUseLocalStorage) {
-      const nextData = JSON.stringify({
-        ...data,
-        updatedAt: new Date().toUTCString(),
-      });
-
-      window.localStorage.setItem('WebSessionData', nextData);
-
-      if (this.isNewSession()) {
-        this.count = this.count + 1;
-      }
-    }
-  }
-
-  get lastActive() {
-    const { updatedAt } = this.data;
-
-    if (updatedAt) {
-      return new Date(updatedAt);
-    }
-
-    return new Date();
+    this.callback = callback;
   }
 
   update() {
-    if (canUseLocalStorage) {
-      this.data = { ...this.data };
+    this.setData({ ...this.data });
+  }
 
-      if (this.isNewSession()) {
-        this.count = this.count + 1;
-      }
+  getUTMs(search = window.location.search) {
+    const { utm = {} } = this.data;
+
+    if (!search) {
+      return utm;
     }
+
+    const nextUTM = parseQuery(search)
+      .reduce((acc, [key, value]) => {
+        /* istanbul ignore else */
+        if (key.startsWith('utm_')) {
+          acc[key.slice(4)] = value;
+        }
+
+        return acc;
+      }, {});
+
+    return {
+      ...utm,
+      ...nextUTM,
+    };
+  }
+
+  getOrigin(location = window.location) {
+    const { hash, pathname, search } = location;
+
+    return {
+      hash,
+      pathname,
+      search,
+    };
   }
 
   isNewSession() {
-    const time = this.lastActive;
+    const { updatedAt, utm } = this.data;
+
+    const lastActive = new Date(updatedAt);
     const now = new Date();
+    /*
+    if (
+      [
+        !shallowCompare(utm, this.getUTMs()),
+        !this.hasData(),
+        (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
+        now.toDateString() !== lastActive.toDateString(), // a new day
+      ].some(d => d)
+    ) {
+      console.log({
+        '!utm': !shallowCompare(utm, this.getUTMs()),
+        '!hasData': !this.hasData(),
+        '> 30 min': (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
+        'new day': now.toDateString() !== lastActive.toDateString(),
+      });
+    }
+    */
 
     return [
-      (now - time) / 1000 / 60 > 30,
-      now.toUTCString() !== time.toUTCString(),
+      !this.hasData(),
+      !shallowCompare(utm, this.getUTMs()), // utm has changed
+      (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
+      now.toDateString() !== lastActive.toDateString(), // a new day
     ].some(d => d);
+  }
+
+  hasData() {
+    return !!store.get('WebSessionData');
+  }
+
+  setData(data) {
+    /* istanbul ignore else */
+    const { origin, utm } = this.data;
+
+    const nextData = {
+      ...data,
+      origin,
+      utm,
+      updatedAt: new Date().toUTCString(),
+    };
+
+    if (this.isNewSession()) {
+      nextData.origin = this.getOrigin();
+      nextData.utm = this.getUTMs();
+      this.count += 1;
+    }
+
+    this.sessionData = nextData;
+    this.callback(nextData);
+    store.set('WebSessionData', nextData);
+  }
+
+  get data() {
+    return this.sessionData || {};
+  }
+
+  set count(count) {
+    this.sessionCount = count;
+    store.set('WebSessionCount', count);
+  }
+
+  get count() {
+    return this.sessionCount;
   }
 }
