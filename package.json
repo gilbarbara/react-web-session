@@ -1,6 +1,6 @@
 {
   "name": "react-web-session",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Keep session data between windows",
   "repository": {
     "type": "git",
