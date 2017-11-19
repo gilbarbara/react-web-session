@@ -63,8 +63,8 @@
     "watch": "npm run build:commonjs -- -w",
     "clean": "rimraf es && rimraf lib",
     "lint": "eslint --ext .js --ext .jsx src test",
-    "test": "jest --config config/jest.config.js --coverage",
-    "test:watch": "jest --config config/jest.config.js --watch",
+    "test": "TZ=UTC jest --config config/jest.config.js --coverage",
+    "test:watch": "TZ=UTC jest --config config/jest.config.js --watch",
     "precommit": "node config/tools commits && npm run lint && npm test",
     "postmerge": "node config/tools update && npm update",
     "prepublishOnly": "npm run build"

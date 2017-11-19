@@ -25,7 +25,7 @@ describe('WebSession', () => {
         .toEqual({
           origin: { hash: '', pathname: '/', search: '' },
           utm: {},
-          updatedAt: 'Sat, 01 Jan 2000 01:15:00 GMT'
+          updatedAt: 'Fri, 31 Dec 1999 23:15:00 GMT'
         });
     });
 
@@ -177,7 +177,7 @@ describe('WebSession', () => {
         .toEqual({
           origin: { hash: '', pathname: '/', search: '' },
           utm: {},
-          updatedAt: 'Sat, 01 Jan 2000 01:15:00 GMT'
+          updatedAt: 'Fri, 31 Dec 1999 23:15:00 GMT'
         });
     });
   });
