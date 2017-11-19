@@ -3,7 +3,9 @@ import PropTypes from 'prop-types';
 import createHistory from 'history/createBrowserHistory';
 import WebSession from './WebSession';
 
-export const webSession = new WebSession();
+const webSession = new WebSession();
+
+export const updateSession = webSession.update;
 
 export default class ReactWebSession extends React.Component {
   static propTypes = {
@@ -41,10 +43,6 @@ export default class ReactWebSession extends React.Component {
   };
 
   render() {
-    return (
-      <div key="ReactWebSession">
-        ReactWebSession V1
-      </div>
-    );
+    return (<div key="ReactWebSession" />);
   }
 }

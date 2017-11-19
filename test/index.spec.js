@@ -2,7 +2,7 @@ import React from 'react';
 import { mount } from 'enzyme';
 import lolex from 'lolex';
 
-import ReactWebSession, { webSession } from '../src/index';
+import ReactWebSession, { updateSession } from '../src/index';
 
 jest.mock('history/createBrowserHistory', () => {
   const history = require.requireActual('history');
@@ -15,6 +15,11 @@ const setLocation = location => {
   window.location.pathname = location.pathname;
   window.location.search = location.search;
 };
+
+const getSession = () => ({
+  data: JSON.parse(localStorage.getItem('WebSessionData')),
+  count: JSON.parse(localStorage.getItem('WebSessionCount')),
+});
 
 const mockCallback = jest.fn();
 
@@ -50,7 +55,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should start a new session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
       expect(count).toBe(1);
 
       expect(mockCallback).lastCalledWith(data);
@@ -58,22 +63,22 @@ describe('ReactWebSession', () => {
     });
 
     it('should handle history changes', () => {
-      const storage = webSession.data;
+      const storage = getSession().data;
       clock.tick('15');
 
       wrapper.instance().props.history.push('/a');
-      const freshStorage = webSession.data;
+      const freshStorage = getSession().data;
 
       expect(mockCallback).lastCalledWith(freshStorage);
       expect(storage.updatedAt !== freshStorage.updatedAt).toBe(true);
     });
 
     it('should call webSession.update() and extend the session', () => {
-      const storage = webSession.data;
+      const storage = getSession().data;
       clock.tick('15');
 
-      webSession.update();
-      const freshStorage = webSession.data;
+      updateSession();
+      const freshStorage = getSession().data;
       expect(mockCallback).lastCalledWith(freshStorage);
       expect(storage.updatedAt !== freshStorage.updatedAt).toBe(true);
     });
@@ -89,7 +94,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(1);
       expect(data.origin.pathname).toBe('/');
@@ -107,7 +112,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should have started a new session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(2);
       expect(data.origin.pathname).toBe('/c');
@@ -125,7 +130,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should have started a new session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(3);
       expect(data.origin.pathname).toBe('/e');
@@ -143,7 +148,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(3);
       expect(data.origin.pathname).toBe('/e');
@@ -162,7 +167,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should have started a new session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(4);
       expect(data.origin.pathname).toBe('/cpc');
@@ -181,7 +186,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(4);
       expect(data.origin.pathname).toBe('/cpc');
@@ -200,7 +205,7 @@ describe('ReactWebSession', () => {
     });
 
     it('should have started a new session', () => {
-      const { count, data } = webSession;
+      const { count, data } = getSession();
 
       expect(count).toBe(5);
       expect(data.origin.pathname).toBe('/affiliate');

@@ -25,10 +25,6 @@ export default class WebSession {
     this.callback = callback;
   }
 
-  update() {
-    this.setData({ ...this.data });
-  }
-
   getUTMs(search = window.location.search) {
     const { utm = {} } = this.data;
 
@@ -118,6 +114,10 @@ export default class WebSession {
     this.callback(nextData);
     store.set('WebSessionData', nextData);
   }
+
+  update = () => {
+    this.setData({ ...this.data });
+  };
 
   get data() {
     return this.sessionData || {};
