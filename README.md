@@ -6,3 +6,5 @@
 [![Test Coverage](https://api.codeclimate.com/v1/badges/d81d926e61fefdb7a9e3/test_coverage)](https://codeclimate.com/github/gilbarbara/react-web-session/test_coverage)
 
 Keep session data between windows.
+
+[![Edit react-web-session demo](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/n40w8w88jl)
