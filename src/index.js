@@ -21,7 +21,7 @@ export default class ReactWebSession extends React.Component {
   componentDidMount() {
     const { callback, history } = this.props;
 
-    webSession.init(callback);
+    webSession.init({ callback });
     this.setData();
 
     this.removeListener = history.listen(() => {

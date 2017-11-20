@@ -7,13 +7,17 @@ describe('WebSession', () => {
   let webSession;
   let clock;
 
-  describe('with localStorage', () => {
+  describe('using the default options', () => {
     beforeAll(() => {
+      localStorage.clear();
+
       clock = lolex.install({
         now: new Date('1999-12-31 23:15:00'),
       });
 
-      webSession = new WebSession(mockCallback);
+      webSession = new WebSession({
+        callback: mockCallback,
+      });
     });
 
     afterAll(() => {
@@ -23,22 +27,38 @@ describe('WebSession', () => {
     it('should start a new session', () => {
       expect(webSession.data)
         .toEqual({
-          origin: { hash: '', pathname: '/', search: '' },
-          utm: {},
-          updatedAt: 'Fri, 31 Dec 1999 23:15:00 GMT'
+          current: {
+            campaign: {},
+            expiresAt: 'Fri, 31 Dec 1999 23:45:00 GMT',
+            hash: '',
+            pathname: '/',
+            search: ''
+          },
+          origin: {
+            createdAt: 'Fri, 31 Dec 1999 23:15:00 GMT',
+            hash: '',
+            pathname: '/',
+            search: ''
+          },
+          visits: 1
         });
     });
 
+    it('should have created the storage items', () => {
+      expect(JSON.parse(localStorage.getItem('WebSessionData'))).toEqual(webSession.data);
+    });
+
     it('should extend the session by 15 seconds', () => {
-      const storage = webSession.data;
+      const { current } = webSession.data;
       clock.tick('15');
 
       webSession.update();
 
-      const freshStorage = webSession.data;
+      const { current: next } = webSession.data;
 
-      expect(mockCallback).lastCalledWith(freshStorage);
-      expect(storage.updatedAt !== freshStorage.updatedAt).toBe(true);
+      expect(current.expiresAt !== next.expiresAt).toBe(true);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(1);
     });
 
     it('should still be in the same session after 5 minutes', () => {
@@ -47,10 +67,8 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(1);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(1);
     });
 
     it('should start a new session after 30 minutes', () => {
@@ -59,10 +77,8 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(2);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(2);
     });
 
     it('should start a new session after midnight', () => {
@@ -70,10 +86,9 @@ describe('WebSession', () => {
       window.location.pathname = '/e';
 
       webSession.update();
-      const { count, data } = webSession;
 
-      expect(count).toBe(3);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(3);
     });
 
     it('should still be in the same session after 10 minutes', () => {
@@ -82,36 +97,30 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(3);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(3);
     });
 
-    it('should have started a new session after 10 minutes but utm params', () => {
+    it('should have started a new session after 10 minutes because there\'s a campaign', () => {
       clock.tick('10:00');
       window.location.pathname = '/cpc';
       window.location.search = '?utm_source=cpc';
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(4);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(4);
     });
 
-    it('should still be in the same session after 5 minutes with a new query but no utm params', () => {
+    it('should still be in the same session after 5 minutes with a new query but no campaign', () => {
       clock.tick('05:00');
       window.location.pathname = '/photos';
       window.location.search = '?color=red';
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(4);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(4);
     });
 
     it('should still be in the same session after 5 but no params', () => {
@@ -121,10 +130,8 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(4);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(4);
     });
 
     it('should have started a new session after 10 minutes but with a new campaign', () => {
@@ -134,10 +141,8 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(5);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(5);
     });
 
     it('should have started a new session after 60 minutes', () => {
@@ -147,15 +152,14 @@ describe('WebSession', () => {
 
       webSession.update();
 
-      const { count, data } = webSession;
-
-      expect(count).toBe(6);
-      expect(mockCallback).lastCalledWith(data);
+      expect(mockCallback).lastCalledWith(webSession.data);
+      expect(webSession.data.visits).toBe(6);
     });
   });
 
   describe('without localStorage', () => {
     beforeAll(() => {
+      localStorage.clear();
       window.isLocalStorageSupported = false;
       window.location.pathname = '/';
       window.location.search = '';
@@ -175,9 +179,20 @@ describe('WebSession', () => {
     it('should start a new session', () => {
       expect(webSession.data)
         .toEqual({
-          origin: { hash: '', pathname: '/', search: '' },
-          utm: {},
-          updatedAt: 'Fri, 31 Dec 1999 23:15:00 GMT'
+          current: {
+            campaign: {},
+            expiresAt: 'Fri, 31 Dec 1999 23:45:00 GMT',
+            hash: '',
+            pathname: '/',
+            search: ''
+          },
+          origin: {
+            createdAt: 'Fri, 31 Dec 1999 23:15:00 GMT',
+            hash: '',
+            pathname: '/',
+            search: ''
+          },
+          visits: 1
         });
     });
   });

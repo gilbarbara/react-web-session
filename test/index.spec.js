@@ -10,16 +10,13 @@ jest.mock('history/createBrowserHistory', () => {
   return history.createMemoryHistory;
 });
 
-const setLocation = location => {
-  window.location.hash = location.hash;
-  window.location.pathname = location.pathname;
-  window.location.search = location.search;
+const setLocation = ({ hash = '', pathname = '/', search = '' } = {}) => {
+  window.location.hash = hash;
+  window.location.pathname = pathname;
+  window.location.search = search;
 };
 
-const getSession = () => ({
-  data: JSON.parse(localStorage.getItem('WebSessionData')),
-  count: JSON.parse(localStorage.getItem('WebSessionCount')),
-});
+const getSession = () => JSON.parse(localStorage.getItem('WebSessionData'));
 
 const mockCallback = jest.fn();
 
@@ -38,6 +35,8 @@ describe('ReactWebSession', () => {
   let clock;
 
   beforeAll(() => {
+    localStorage.clear();
+
     clock = lolex.install({
       now: new Date('1999-12-31 23:15:00'),
     });
@@ -55,161 +54,196 @@ describe('ReactWebSession', () => {
     });
 
     it('should start a new session', () => {
-      const { count, data } = getSession();
-      expect(count).toBe(1);
+      const session = getSession();
+      expect(session.visits).toBe(1);
 
-      expect(mockCallback).lastCalledWith(data);
-      expect(data.origin.pathname).toBe('/');
+      expect(mockCallback).lastCalledWith(session);
+      expect(session.origin.pathname).toBe('/');
     });
 
     it('should handle history changes', () => {
-      const storage = getSession().data;
+      const storage = getSession();
       clock.tick('15');
 
       wrapper.instance().props.history.push('/a');
-      const freshStorage = getSession().data;
+      const freshStorage = getSession();
 
       expect(mockCallback).lastCalledWith(freshStorage);
-      expect(storage.updatedAt !== freshStorage.updatedAt).toBe(true);
+      expect(storage.current.expiresAt !== freshStorage.current.expiresAt).toBe(true);
     });
 
     it('should call webSession.update() and extend the session', () => {
-      const storage = getSession().data;
+      const storage = getSession();
       clock.tick('15');
 
       updateSession();
-      const freshStorage = getSession().data;
+      const freshStorage = getSession();
       expect(mockCallback).lastCalledWith(freshStorage);
-      expect(storage.updatedAt !== freshStorage.updatedAt).toBe(true);
+      expect(storage.current.expiresAt !== freshStorage.current.expiresAt).toBe(true);
     });
   });
 
   describe('a new visit after 05 minutes', () => {
     beforeAll(() => {
       clock.tick('05:00');
-      window.location.pathname = '/b';
+      setLocation({ pathname: '/b' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(1);
-      expect(data.origin.pathname).toBe('/');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(1);
+      expect(session.current.pathname).toBe('/');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
   describe('another visit after 30 minutes', () => {
     beforeAll(() => {
       clock.tick('31:00');
-      window.location.pathname = '/c';
+      setLocation({ pathname: '/c' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should have started a new session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(2);
-      expect(data.origin.pathname).toBe('/c');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(2);
+      expect(session.current.pathname).toBe('/c');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
   describe('a new visit after 10 minutes but it\'s a new day', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      window.location.pathname = '/e';
+      setLocation({ pathname: '/e' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should have started a new session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(3);
-      expect(data.origin.pathname).toBe('/e');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(3);
+      expect(session.current.pathname).toBe('/e');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
   describe('10 minutes after the last visit', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      window.location.pathname = '/g';
+      setLocation({ pathname: '/g' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(3);
-      expect(data.origin.pathname).toBe('/e');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(3);
+      expect(session.current.pathname).toBe('/e');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
-  describe('another visit after 10 minutes but with utm params', () => {
+  describe('another visit after 10 minutes but it has a new campaign', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      window.location.pathname = '/cpc';
-      window.location.search = '?utm_source=cpc';
+      setLocation({ pathname: '/cpc', search: '?utm_source=cpc' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should have started a new session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(4);
-      expect(data.origin.pathname).toBe('/cpc');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(4);
+      expect(session.current.pathname).toBe('/cpc');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
-  describe('just 5 minutes after the last but no params', () => {
+  describe('just 5 minutes after the last but no campaign', () => {
     beforeAll(() => {
       clock.tick('05:00');
-      window.location.pathname = '/about';
-      window.location.search = '';
+      setLocation({ pathname: '/about', search: '' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should still be in the same session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(4);
-      expect(data.origin.pathname).toBe('/cpc');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(4);
+      expect(session.current.pathname).toBe('/cpc');
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 
   describe('another 10 minutes but a new campaign', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      window.location.pathname = '/affiliate';
-      window.location.search = '?utm_source=affiliate';
+      setLocation({ pathname: '/affiliate', search: '?utm_source=affiliate' });
 
       wrapper = setup();
       wrapper.instance().props.history.listen(setLocation);
     });
 
     it('should have started a new session', () => {
-      const { count, data } = getSession();
+      const session = getSession();
 
-      expect(count).toBe(5);
-      expect(data.origin.pathname).toBe('/affiliate');
-      expect(mockCallback).lastCalledWith(data);
+      expect(session.visits).toBe(5);
+      expect(session.current.pathname).toBe('/affiliate');
+      expect(mockCallback).lastCalledWith(session);
+    });
+  });
+
+  describe('another 60 minutes', () => {
+    beforeAll(() => {
+      clock.tick('01:00:00');
+      setLocation();
+
+      wrapper = setup();
+      wrapper.instance().props.history.listen(setLocation);
+    });
+
+    it('should have started a new session', () => {
+      const session = getSession();
+
+      expect(session.visits).toBe(6);
+      expect(session.current.pathname).toBe('/');
+      expect(session.current.campaign).toEqual({ source: 'affiliate' });
+      expect(mockCallback).lastCalledWith(session);
+    });
+  });
+
+  describe('with AdWords query', () => {
+    beforeAll(() => {
+      clock.tick('10:00');
+      setLocation({ pathname: '/products/1234', search: '?gclid=3097hds92ghsd775sg72sg256rs2s35d3' });
+
+      wrapper = setup();
+      wrapper.instance().props.history.listen(setLocation);
+    });
+
+    it('should have started a new session', () => {
+      const session = getSession();
+
+      expect(session.visits).toBe(7);
+      expect(session.current.pathname).toBe('/products/1234');
+      expect(session.current.campaign).toEqual({ gclid: '3097hds92ghsd775sg72sg256rs2s35d3' });
+      expect(mockCallback).lastCalledWith(session);
     });
   });
 });

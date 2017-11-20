@@ -6,49 +6,44 @@ import {
 } from './utils';
 
 export default class WebSession {
-  constructor(callback) {
+  constructor(options) {
     if (!hasLocalStorage()) {
       console.error('localStorage is not supported'); //eslint-disable-line no-console
     }
 
-    this.init(callback);
-  }
-
-  init(callback = () => {}) {
-    this.sessionData = store.get('WebSessionData') || {
-      origin: this.getOrigin(),
-      utm: this.getUTMs(),
-      updatedAt: new Date().toUTCString(),
+    this.defaultOptions = {
+      callback: () => {},
+      duration: 30,
+      name: 'WebSessionData',
+      timezone: '',
     };
-    this.sessionCount = Number(store.get('WebSessionCount')) || 0;
 
-    this.callback = callback;
+    this.init(options);
   }
 
-  getUTMs(search = window.location.search) {
-    const { utm = {} } = this.data;
-
-    if (!search) {
-      return utm;
-    }
-
-    const nextUTM = parseQuery(search)
-      .reduce((acc, [key, value]) => {
-        /* istanbul ignore else */
-        if (key.startsWith('utm_')) {
-          acc[key.slice(4)] = value;
-        }
-
-        return acc;
-      }, {});
-
-    return {
-      ...utm,
-      ...nextUTM,
+  init(options = {}) {
+    this.options = {
+      ...this.defaultOptions,
+      ...options,
     };
+
+    this.sessionData = store.get(this.options.name) || {
+      origin: {
+        ...this.getLocation(),
+        createdAt: new Date().toUTCString(),
+      },
+      current: {
+        ...this.getLocation(),
+        campaign: this.getCampaign(),
+        expiresAt: this.getExpirationDate(),
+      },
+      visits: 0,
+    };
+
+    this.update();
   }
 
-  getOrigin(location = window.location) {
+  getLocation(location = window.location) {
     const { hash, pathname, search } = location;
 
     return {
@@ -58,77 +53,110 @@ export default class WebSession {
     };
   }
 
-  isNewSession() {
-    const { updatedAt, utm } = this.data;
+  getCampaign(search = window.location.search) {
+    const { current } = this.data;
+    const campaign = current ? current.campaign : {};
 
-    const lastActive = new Date(updatedAt);
+    if (!search) {
+      return campaign;
+    }
+
+    const nextCampaign = parseQuery(search)
+      .reduce((acc, [key, value]) => {
+        /* istanbul ignore else */
+        if (key.startsWith('utm_')) {
+          acc[key.slice(4)] = value;
+        }
+
+        if (key.startsWith('gclid')) {
+          acc[key] = value;
+        }
+
+        return acc;
+      }, {});
+
+    if (Object.keys(nextCampaign).length) {
+      return nextCampaign;
+    }
+
+    return campaign;
+  }
+
+  getExpirationDate() {
+    return new Date(Date.now() + (this.options.duration * 60000)).toUTCString();
+  }
+
+  isExpired(expiration) {
     const now = new Date();
+    const expiresAt = new Date(expiration);
+    const issuedAt = new Date(expiresAt.getTime() - (this.options.duration * 60000));
+
+    return (now.toDateString() !== issuedAt.toDateString()) || (expiresAt < now);
+  }
+
+  isNewSession() {
+    const { current: { campaign, expiresAt } } = this.data;
+
     /*
     if (
       [
-        !shallowCompare(utm, this.getUTMs()),
+        !shallowCompare(campaign, this.getCampaign()),
         !this.hasData(),
-        (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
-        now.toDateString() !== lastActive.toDateString(), // a new day
+        this.isExpired(expiresAt), // a new day
       ].some(d => d)
     ) {
       console.log({
-        '!utm': !shallowCompare(utm, this.getUTMs()),
         '!hasData': !this.hasData(),
-        '> 30 min': (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
-        'new day': now.toDateString() !== lastActive.toDateString(),
+        '!campaign': !shallowCompare(campaign, this.getCampaign()),
+        'is expired': this.isExpired(expiresAt),
       });
     }
     */
 
     return [
       !this.hasData(),
-      !shallowCompare(utm, this.getUTMs()), // utm has changed
-      (now - lastActive) / 1000 / 60 > 30, // 30 minutes of inactivity
-      now.toDateString() !== lastActive.toDateString(), // a new day
+      !shallowCompare(campaign, this.getCampaign()), // campaign has changed
+      this.isExpired(expiresAt), // session expired
     ].some(d => d);
   }
 
   hasData() {
-    return !!store.get('WebSessionData');
+    return !!store.get(this.options.name);
   }
 
   setData(data) {
     /* istanbul ignore else */
-    const { origin, utm } = this.data;
+    const { current, origin, visits } = this.data;
 
     const nextData = {
       ...data,
       origin,
-      utm,
-      updatedAt: new Date().toUTCString(),
+      visits,
+      current: {
+        ...current,
+        expiresAt: this.getExpirationDate(),
+      },
     };
 
     if (this.isNewSession()) {
-      nextData.origin = this.getOrigin();
-      nextData.utm = this.getUTMs();
-      this.count += 1;
+      nextData.current = {
+        ...this.getLocation(),
+        campaign: this.getCampaign(),
+        expiresAt: this.getExpirationDate(),
+      };
+      nextData.visits += 1;
     }
 
     this.sessionData = nextData;
-    this.callback(nextData);
-    store.set('WebSessionData', nextData);
+    this.options.callback(nextData);
+    store.set(this.options.name, nextData);
   }
 
   update = () => {
-    this.setData({ ...this.data });
+    this.setData(this.sessionData);
   };
 
   get data() {
     return this.sessionData || {};
-  }
-
-  set count(count) {
-    this.sessionCount = count;
-    store.set('WebSessionCount', count);
-  }
-
-  get count() {
-    return this.sessionCount;
   }
 }
