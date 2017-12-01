@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import createHistory from 'history/createBrowserHistory';
-import WebSession from './WebSession';
+import WebSession from 'web-session';
 
 const webSession = new WebSession();
 
@@ -39,7 +39,7 @@ export default class ReactWebSession extends React.Component {
   setData = () => {
     const { data } = this.props;
 
-    webSession.setData(data);
+    webSession.update(data);
   };
 
   render() {

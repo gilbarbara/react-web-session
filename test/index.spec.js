@@ -58,7 +58,7 @@ describe('ReactWebSession', () => {
       expect(session.visits).toBe(1);
 
       expect(mockCallback).lastCalledWith(session);
-      expect(session.origin.pathname).toBe('/');
+      expect(session.origin.href).toBe('/');
     });
 
     it('should handle history changes', () => {
@@ -72,7 +72,7 @@ describe('ReactWebSession', () => {
       expect(storage.current.expiresAt !== freshStorage.current.expiresAt).toBe(true);
     });
 
-    it('should call webSession.update() and extend the session', () => {
+    it('should call updateSession() and extend the session', () => {
       const storage = getSession();
       clock.tick('15');
 
@@ -96,7 +96,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(1);
-      expect(session.current.pathname).toBe('/');
+      expect(session.current.href).toBe('/');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -114,7 +114,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(2);
-      expect(session.current.pathname).toBe('/c');
+      expect(session.current.href).toBe('/c');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -132,7 +132,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(3);
-      expect(session.current.pathname).toBe('/e');
+      expect(session.current.href).toBe('/e');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -150,7 +150,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(3);
-      expect(session.current.pathname).toBe('/e');
+      expect(session.current.href).toBe('/e');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -168,7 +168,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(4);
-      expect(session.current.pathname).toBe('/cpc');
+      expect(session.current.href).toBe('/cpc?utm_source=cpc');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -186,7 +186,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(4);
-      expect(session.current.pathname).toBe('/cpc');
+      expect(session.current.href).toBe('/cpc?utm_source=cpc');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -204,7 +204,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(5);
-      expect(session.current.pathname).toBe('/affiliate');
+      expect(session.current.href).toBe('/affiliate?utm_source=affiliate');
       expect(mockCallback).lastCalledWith(session);
     });
   });
@@ -222,7 +222,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(6);
-      expect(session.current.pathname).toBe('/');
+      expect(session.current.href).toBe('/');
       expect(session.current.campaign).toEqual({ source: 'affiliate' });
       expect(mockCallback).lastCalledWith(session);
     });
@@ -241,7 +241,7 @@ describe('ReactWebSession', () => {
       const session = getSession();
 
       expect(session.visits).toBe(7);
-      expect(session.current.pathname).toBe('/products/1234');
+      expect(session.current.href).toBe('/products/1234?gclid=3097hds92ghsd775sg72sg256rs2s35d3');
       expect(session.current.campaign).toEqual({ gclid: '3097hds92ghsd775sg72sg256rs2s35d3' });
       expect(mockCallback).lastCalledWith(session);
     });
