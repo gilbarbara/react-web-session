@@ -11,17 +11,28 @@ export default class ReactWebSession extends React.Component {
   static propTypes = {
     callback: PropTypes.func,
     data: PropTypes.object,
+    duration: PropTypes.number,
     history: PropTypes.object,
+    name: PropTypes.string,
+    timezone: PropTypes.string,
   };
 
   static defaultProps = {
+    duration: 30,
     history: createHistory(),
+    name: 'WebSessionData',
+    timezone: 'UTC',
   };
 
   componentDidMount() {
-    const { callback, history } = this.props;
+    const { callback, duration, history, name, timezone } = this.props;
 
-    webSession.init({ callback });
+    webSession.init({
+      callback,
+      duration,
+      name,
+      timezone,
+    });
     this.setData();
 
     this.removeListener = history.listen(() => {

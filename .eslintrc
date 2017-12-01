@@ -43,6 +43,7 @@
     "no-plusplus": 0,
     "no-trailing-spaces": 1,
     "no-unused-vars": 1,
+    "object-curly-newline": 0,
     "object-shorthand": [1, "always"],
     "one-var": 1,
     "padded-blocks": 1,
