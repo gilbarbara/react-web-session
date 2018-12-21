@@ -1,5 +1,5 @@
 {
-  "extends": "airbnb",
+  "extends": ["airbnb", "prettier"],
   "parser": "babel-eslint",
   "env": {
     "browser": true,
@@ -11,11 +11,6 @@
   "rules": {
     "arrow-body-style": [1, "as-needed"],
     "arrow-parens": [1, "as-needed"],
-    "brace-style": [
-      1,
-      "stroustrup",
-      { "allowSingleLine": true }
-    ],
     "camelcase": 0,
     "class-methods-use-this": 0,
     "comma-dangle": 0,

@@ -8,21 +8,20 @@ const run = promisify(exec);
 
 function updateDependencies() {
   return run('git rev-parse --is-inside-work-tree')
-    .then(() => (
+    .then(() =>
       run('git diff-tree -r --name-only --no-commit-id origin/HEAD HEAD')
         .then(({ stdout }) => {
           if (stdout.match('package.json')) {
             console.log(chalk.yellow('▼ Updating packages'));
             exec('npm install').stdout.pipe(process.stdout);
-          }
-          else {
+          } else {
             console.log(chalk.green('✔ Nothing to install'));
           }
         })
         .catch(err => {
           throw new Error(err);
-        })
-    ))
+        }),
+    )
     .catch(() => {
       console.log('not under git');
     });
@@ -30,7 +29,7 @@ function updateDependencies() {
 
 function checkUpstream() {
   return run('git rev-parse --is-inside-work-tree')
-    .then(() => (
+    .then(() =>
       run('git remote -v update')
         .then(() => {
           Promise.all([
@@ -38,15 +37,10 @@ function checkUpstream() {
             run('git rev-parse @{u}'),
             run('git merge-base @ @{u}'),
           ])
-            .then(([
-              { stdout: $local },
-              { stdout: $remote },
-              { stdout: $base },
-            ]) => {
+            .then(([{ stdout: $local }, { stdout: $remote }, { stdout: $base }]) => {
               if ($local === $remote) {
                 console.log(chalk.green('✔ Repo is up-to-date!'));
-              }
-              else if ($local === $base) {
+              } else if ($local === $base) {
                 console.log(chalk.red('⊘ Error'), 'You need to pull, there are new commits.');
                 process.exit(1);
               }
@@ -62,8 +56,8 @@ function checkUpstream() {
         })
         .catch(err => {
           throw new Error(err);
-        })
-    ))
+        }),
+    )
     .catch(() => {
       console.log('not under git');
     });
@@ -94,5 +88,4 @@ module.exports = yargs
     `);
     console.log(instance.help());
     process.exit(1);
-  })
-  .argv;
+  }).argv;
