@@ -54,6 +54,6 @@ export default class ReactWebSession extends React.Component {
   };
 
   render() {
-    return (<div key="ReactWebSession" />);
+    return <div key="ReactWebSession" />;
   }
 }

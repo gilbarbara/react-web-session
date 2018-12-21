@@ -18,10 +18,8 @@ const props = {
   callback: mockCallback,
 };
 
-const setup = (ownProps = props) => mount(
-  <ReactWebSession {...ownProps} />,
-  { attachTo: document.getElementById('react') }
-);
+const setup = (ownProps = props) =>
+  mount(<ReactWebSession {...ownProps} />, { attachTo: document.getElementById('react') });
 
 describe('ReactWebSession', () => {
   let wrapper;
@@ -112,7 +110,7 @@ describe('ReactWebSession', () => {
     });
   });
 
-  describe('a new visit after 10 minutes but it\'s a new day', () => {
+  describe("a new visit after 10 minutes but it's a new day", () => {
     beforeAll(() => {
       clock.tick('10:00');
       navigate({ pathname: '/e' });
