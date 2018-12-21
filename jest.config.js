@@ -4,7 +4,7 @@ module.exports = {
   },
   moduleFileExtensions: ['js', 'jsx', 'json'],
   moduleDirectories: ['node_modules', 'src', './'],
-  setupFiles: ['<rootDir>/test/__setup__/setupFiles.js'],
+  setupFiles: ['<rootDir>/test/setupFiles.js'],
   testEnvironment: 'jest-environment-jsdom-global',
   testEnvironmentOptions: {
     resources: 'usable',
