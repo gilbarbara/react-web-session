@@ -1,7 +1,6 @@
 module.exports = {
-  rootDir: '../',
   transform: {
-    '.*': '<rootDir>/node_modules/babel-jest',
+    '.*': 'babel-jest',
   },
   moduleFileExtensions: [
     'js',
@@ -14,21 +13,24 @@ module.exports = {
     './',
   ],
   setupFiles: [
-    '<rootDir>/test/__setup__/shim.js',
-    '<rootDir>/test/__setup__/index.js',
-    'jest-localstorage-mock',
+    '<rootDir>/test/__setup__/setupFiles.js'
   ],
+  testEnvironment: 'jest-environment-jsdom-global',
+  testEnvironmentOptions: {
+    resources: 'usable',
+  },
   testRegex: '/test/.*?\\.(test|spec)\\.js$',
+  testURL: 'http://localhost:3000',
   collectCoverage: false,
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
   ],
   coverageThreshold: {
     global: {
-      branches: 40,
-      functions: 60,
-      lines: 60,
-      statements: 60
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90
     },
   },
   verbose: true,

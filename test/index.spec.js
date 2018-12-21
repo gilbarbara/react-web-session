@@ -10,12 +10,6 @@ jest.mock('history/createBrowserHistory', () => {
   return history.createMemoryHistory;
 });
 
-const setLocation = ({ hash = '', pathname = '/', search = '' } = {}) => {
-  window.location.hash = hash;
-  window.location.pathname = pathname;
-  window.location.search = search;
-};
-
 const getSession = () => JSON.parse(localStorage.getItem('WebSessionData'));
 
 const mockCallback = jest.fn();
@@ -24,11 +18,10 @@ const props = {
   callback: mockCallback,
 };
 
-const setup = (ownProps = props) =>
-  mount(
-    <ReactWebSession {...ownProps} />,
-    { attachTo: document.getElementById('react') }
-  );
+const setup = (ownProps = props) => mount(
+  <ReactWebSession {...ownProps} />,
+  { attachTo: document.getElementById('react') }
+);
 
 describe('ReactWebSession', () => {
   let wrapper;
@@ -50,7 +43,7 @@ describe('ReactWebSession', () => {
   describe('a brand new session', () => {
     beforeAll(() => {
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should start a new session', () => {
@@ -86,10 +79,10 @@ describe('ReactWebSession', () => {
   describe('a new visit after 05 minutes', () => {
     beforeAll(() => {
       clock.tick('05:00');
-      setLocation({ pathname: '/b' });
+      navigate({ pathname: '/b' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should still be in the same session', () => {
@@ -104,10 +97,10 @@ describe('ReactWebSession', () => {
   describe('another visit after 30 minutes', () => {
     beforeAll(() => {
       clock.tick('31:00');
-      setLocation({ pathname: '/c' });
+      navigate({ pathname: '/c' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
@@ -122,10 +115,10 @@ describe('ReactWebSession', () => {
   describe('a new visit after 10 minutes but it\'s a new day', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      setLocation({ pathname: '/e' });
+      navigate({ pathname: '/e' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
@@ -140,10 +133,10 @@ describe('ReactWebSession', () => {
   describe('10 minutes after the last visit', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      setLocation({ pathname: '/g' });
+      navigate({ pathname: '/g' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should still be in the same session', () => {
@@ -158,10 +151,10 @@ describe('ReactWebSession', () => {
   describe('another visit after 10 minutes but it has a new campaign', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      setLocation({ pathname: '/cpc', search: '?utm_source=cpc' });
+      navigate({ pathname: '/cpc', search: 'utm_source=cpc' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
@@ -176,10 +169,10 @@ describe('ReactWebSession', () => {
   describe('just 5 minutes after the last but no campaign', () => {
     beforeAll(() => {
       clock.tick('05:00');
-      setLocation({ pathname: '/about', search: '' });
+      navigate({ pathname: '/about', search: '' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should still be in the same session', () => {
@@ -194,10 +187,10 @@ describe('ReactWebSession', () => {
   describe('another 10 minutes but a new campaign', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      setLocation({ pathname: '/affiliate', search: '?utm_source=affiliate' });
+      navigate({ pathname: '/affiliate', search: 'utm_source=affiliate' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
@@ -212,10 +205,10 @@ describe('ReactWebSession', () => {
   describe('another 60 minutes', () => {
     beforeAll(() => {
       clock.tick('01:00:00');
-      setLocation();
+      navigate({ pathname: '/' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
@@ -231,10 +224,10 @@ describe('ReactWebSession', () => {
   describe('with AdWords query', () => {
     beforeAll(() => {
       clock.tick('10:00');
-      setLocation({ pathname: '/products/1234', search: '?gclid=3097hds92ghsd775sg72sg256rs2s35d3' });
+      navigate({ pathname: '/products/1234', search: 'gclid=3097hds92ghsd775sg72sg256rs2s35d3' });
 
       wrapper = setup();
-      wrapper.instance().props.history.listen(setLocation);
+      wrapper.instance().props.history.listen(navigate);
     });
 
     it('should have started a new session', () => {
