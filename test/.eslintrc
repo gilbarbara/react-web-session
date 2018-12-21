@@ -1,0 +1,10 @@
+{
+  "globals": {
+    "jsdom": false,
+    "navigate": true
+  },
+  "rules": {
+    "no-console": "off",
+    "no-restricted-globals": "off"
+  }
+}
