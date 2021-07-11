@@ -18,7 +18,7 @@ module.exports = {
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json'],
   preset: 'ts-jest',
   resetMocks: false,
-  setupFiles: ['<rootDir>/test/__setup__/setupFiles.ts'],
+  setupFiles: ['jest-date-mock', 'jest-localstorage-mock'],
   setupFilesAfterEnv: ['jest-location-mock'],
   testEnvironment: 'jsdom',
   testEnvironmentOptions: {

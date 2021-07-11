@@ -2,6 +2,8 @@
 
 [![NPM version](https://badge.fury.io/js/react-web-session.svg)](https://www.npmjs.com/package/react-web-session) [![build status](https://travis-ci.org/gilbarbara/react-web-session.svg)](https://travis-ci.org/gilbarbara/react-web-session) [![Maintainability](https://api.codeclimate.com/v1/badges/d81d926e61fefdb7a9e3/maintainability)](https://codeclimate.com/github/gilbarbara/react-web-session/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/d81d926e61fefdb7a9e3/test_coverage)](https://codeclimate.com/github/gilbarbara/react-web-session/test_coverage)
 
+> A React wrapper for [web-session](https://github.com/gilbarbara/web-session).
+
 How many sessions does it take for a user to create an account or purchase something?  
 Now you can track these metrics!
 
@@ -18,15 +20,13 @@ a period of time (30 minutes by default) that is extended automatically upon use
 - at midnight (based on your GA settings, not client timezone).
 - campaign query change (utm or gclid)
 
-> A React wrapper for [web-session](https://github.com/gilbarbara/web-session).
-
 ## Usage
 
 ```bash
 npm install --save react-web-session
 ```
 
-And require it in your component
+And require it in your root component
 
 ```typescript jsx
 import WebSession from 'react-web-session';
