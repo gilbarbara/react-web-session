@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ReactWebSession with children and custom props should render the visits 1`] = `
+<div>
+  7
+</div>
+`;
