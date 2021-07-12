@@ -1,6 +1,8 @@
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { createBrowserHistory, History } from 'history';
 import WebSession, { AnyObject, Options, Session } from 'web-session';
+
+import { useDeepCompareEffect } from './helpers';
 
 interface Props extends Partial<Options> {
   children?: ReactNode | ((session: Session, history: History) => ReactNode);
@@ -22,10 +24,11 @@ function ReactWebSession(props: Props) {
     name = 'WebSessionData',
     timezone = 'UTC',
   } = props;
+  const [sessionData, setSessionData] = useState(data);
 
-  const setData = useRef(() => {
-    webSession.update(data);
-  });
+  const setData = useCallback(() => {
+    updateSession(sessionData);
+  }, [sessionData]);
 
   useEffect(() => {
     webSession.init({
@@ -34,16 +37,20 @@ function ReactWebSession(props: Props) {
       name,
       timezone,
     });
-    setData.current();
+    setData();
 
     const removeListener = history.listen(() => {
-      setData.current();
+      setData();
     });
 
     return () => {
       removeListener();
     };
-  }, [callback, duration, history, name, timezone]);
+  }, [callback, duration, history, name, setData, timezone]);
+
+  useDeepCompareEffect(() => {
+    setSessionData(data);
+  }, [data]);
 
   if (typeof children === 'function') {
     return children(webSession.session, history);
