@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { createBrowserHistory, History } from 'history';
 import WebSession, { AnyObject, Options, Session } from 'web-session';
 
@@ -23,9 +23,9 @@ function ReactWebSession(props: Props) {
     timezone = 'UTC',
   } = props;
 
-  const setData = useCallback(() => {
+  const setData = useRef(() => {
     webSession.update(data);
-  }, [data]);
+  });
 
   useEffect(() => {
     webSession.init({
@@ -34,16 +34,16 @@ function ReactWebSession(props: Props) {
       name,
       timezone,
     });
-    setData();
+    setData.current();
 
     const removeListener = history.listen(() => {
-      setData();
+      setData.current();
     });
 
     return () => {
       removeListener();
     };
-  }, [callback, duration, history, name, setData, timezone]);
+  }, [callback, duration, history, name, timezone]);
 
   if (typeof children === 'function') {
     return children(webSession.session, history);
@@ -53,3 +53,4 @@ function ReactWebSession(props: Props) {
 }
 
 export default ReactWebSession;
+export { Session };
